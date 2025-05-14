@@ -1,11 +1,23 @@
-#include "Auto.h"
+#pragma once
+#include "imconfig.h"
+#include "imgui_impl_dx11.h"
+#include "imgui_impl_win32.h"
+#include "imgui_internal.h"
+#include "imstb_rectpack.h"
+#include "imstb_textedit.h"
+#include "imstb_truetype.h"
+#include "imgui.h"
+#include "d3d11.h"
+#include <tchar.h>
 #include "Windows.h"
-#include "iostream"
-#include <string.h>
+#include <iostream>
+#include <string>
 #include <Tlhelp32.h>
 #include <stdio.h>
-#include <tchar.h>
 #include <cstdio>
+#include <locale>
+#pragma comment(lib,"d3d11.lib")
+// Data
 static ID3D11Device* g_pd3dDevice = nullptr;
 static ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
 static IDXGISwapChain* g_pSwapChain = nullptr;
@@ -13,85 +25,17 @@ static bool                     g_SwapChainOccluded = false;
 static UINT                     g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
 
+// Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-bool CreateDeviceD3D(HWND hWnd)
-{
-    // Setup swap chain
-    DXGI_SWAP_CHAIN_DESC sd;
-    ZeroMemory(&sd, sizeof(sd));
-    sd.BufferCount = 2;
-    sd.BufferDesc.Width = 0;
-    sd.BufferDesc.Height = 0;
-    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    sd.BufferDesc.RefreshRate.Numerator = 60;
-    sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.OutputWindow = hWnd;
-    sd.SampleDesc.Count = 1;
-    sd.SampleDesc.Quality = 0;
-    sd.Windowed = TRUE;
-    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-    UINT createDeviceFlags = 0;
-    //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
-    D3D_FEATURE_LEVEL featureLevel;
-    const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-    HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
-    if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
-        res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
-    if (res != S_OK)
-        return false;
 
-    CreateRenderTarget();
-    return true;
-}
-void CleanupDeviceD3D()
-{
-    CleanupRenderTarget();
-    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = nullptr; }
-    if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = nullptr; }
-    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
-}
-void CreateRenderTarget()
-{
-    ID3D11Texture2D* pBackBuffer;
-    g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_mainRenderTargetView);
-    pBackBuffer->Release();
-}
-void CleanupRenderTarget()
-{
-    if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = nullptr; }
-}
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
-        return true;
 
-    switch (msg)
-    {
-    case WM_SIZE:
-        if (wParam == SIZE_MINIMIZED)
-            return 0;
-        g_ResizeWidth = (UINT)LOWORD(lParam); // Queue resize
-        g_ResizeHeight = (UINT)HIWORD(lParam);
-        return 0;
-    case WM_SYSCOMMAND:
-        if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
-            return 0;
-        break;
-    case WM_DESTROY:
-        ::PostQuitMessage(0);
-        return 0;
-    }
-    return ::DefWindowProcW(hWnd, msg, wParam, lParam);
-}
+
 
 //######################变量定义
 RECT 窗口矩形; //窗口的左上xy，右下xy
@@ -122,9 +66,11 @@ v4d 窗口转换坐标;
 guge 骨骼坐标;
 float 矩阵数组[4][4];
 POINT 坐标;
-DWORD64 缓冲区, 缓冲区1, 缓冲区2,缓冲区3;
+DWORD64 缓冲区, 缓冲区1, 缓冲区2, 缓冲区3;
 float d3d矩阵z, d3d矩阵x, d3d矩阵y, d3d矩阵y2, 缩放比例;
-int hp, team,myteam;
+int hp, team, myteam;
+bool show_my_window = false;
+
 //函数1
 DWORD GetProcessiD(const wchar_t* processName) {
     //通过创建进程快照 遍历进程快照来获取进程ID
@@ -165,6 +111,8 @@ HANDLE GetProcessModuleHandle(DWORD pid, CONST TCHAR* moduleName) {
     CloseHandle(handle);
     return 0;
 }
+
+
 
 // 封装读取内存的函数
 bool ReadMemory(HANDLE 进程句柄, DWORD64 地址, void* 缓冲区, SIZE_T 大小) {
@@ -229,64 +177,121 @@ bool 骨骼绘制(int i, int j, DWORD64 缓冲区2, const float 矩阵数组[4][
     return true;
 }
 
-void 绘制方框()
+int 绘制点位()
 {
-
-    ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)缓冲区 + 0xdb8), &游戏坐标, 12, NULL);   //坐标
-    //std::cout << 游戏坐标.x <<"---" << 游戏坐标.y << "---" << 游戏坐标.z << "---"<<team<<"---"<<hp<<std::endl;
-
-    d3d矩阵z = 矩阵数组[3][0] * 游戏坐标.x + 矩阵数组[3][1] * 游戏坐标.y + 矩阵数组[3][2] * 游戏坐标.z + 矩阵数组[3][3];
-    缩放比例 = 1 / d3d矩阵z;
-    d3d矩阵x = 窗口矩形.right / 2 + (矩阵数组[0][0] * 游戏坐标.x + 矩阵数组[0][1] * 游戏坐标.y + 矩阵数组[0][2] * 游戏坐标.z + 矩阵数组[0][3]) * 缩放比例 * 窗口矩形.right / 2;
-    d3d矩阵y = 窗口矩形.bottom / 2 - (矩阵数组[1][0] * 游戏坐标.x + 矩阵数组[1][1] * 游戏坐标.y + 矩阵数组[1][2] * (游戏坐标.z + 70) + 矩阵数组[1][3]) * 缩放比例 * 窗口矩形.bottom / 2;
-    d3d矩阵y2 = 窗口矩形.bottom / 2 - (矩阵数组[1][0] * 游戏坐标.x + 矩阵数组[1][1] * 游戏坐标.y + 矩阵数组[1][2] * (游戏坐标.z) + 矩阵数组[1][3]) * 缩放比例 * 窗口矩形.bottom / 2;
-    if (d3d矩阵x > 0 && d3d矩阵y > 0 && 缩放比例 > 0)
+    float 投掷世界坐标起始x, 投掷世界坐标起始y, 投掷世界坐标终止x, 投掷世界坐标终止y, 相机z;
+    float beginx = 1661.68, beginy = 1965.68, beginz = 4.86575;
+    float endx = 1313.78, endy = 1559.32, endz = 226.004;
+    //std::cout << 矩阵数组[0][0] << std::endl;
+    相机z = beginx * 矩阵数组[2][0] + beginy * 矩阵数组[2][1] + beginz * 矩阵数组[2][2] + 矩阵数组[2][3];
+    
+    if(相机z > 0)
     {
-        窗口转换坐标.y = d3d矩阵y;
-        窗口转换坐标.x = d3d矩阵x;
-        窗口转换坐标.z = d3d矩阵y2 - d3d矩阵y;
-        窗口转换坐标.w = (d3d矩阵y2 - d3d矩阵y) / 2;
-        ImGui::GetForegroundDrawList()->AddRect(ImVec2(窗口转换坐标.x + 窗口转换坐标.w / 2, d3d矩阵y2), ImVec2(窗口转换坐标.x - 窗口转换坐标.w / 2, d3d矩阵y2 - 窗口转换坐标.z), ImColor(0, 245, 255, 255));
-        ImGui::GetForegroundDrawList()->AddLine(ImVec2(1280, 0), ImVec2(窗口转换坐标.x, d3d矩阵y2 - 窗口转换坐标.z), ImColor(255, 0, 0, 255));
-        //char buffer[32];  // 给定足够大的缓冲区来存储数字
-        //snprintf(buffer, sizeof(buffer), "%d", i);
-        //ImGui::GetForegroundDrawList()->AddText(ImVec2(窗口转换坐标.x, 窗口转换坐标.y), ImColor(0, 255, 0, 255), buffer);
+        投掷世界坐标起始x = 窗口矩形.right / 2 +
+            (矩阵数组[0][0] * beginx + 矩阵数组[0][1] * beginy + 矩阵数组[0][2] * beginz + 矩阵数组[0][3]) /
+            相机z * 窗口矩形.right / 2;
+
+        投掷世界坐标起始y = 窗口矩形.bottom / 2 -
+            (矩阵数组[1][0] * beginx + 矩阵数组[1][1] * beginy + 矩阵数组[1][2] * beginz + 矩阵数组[1][3]) /
+            相机z * 窗口矩形.bottom / 2;
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y + 2), ImColor(0, 255, 0, 255), u8"CT-A门烟(跳投)");
     }
+    相机z = endx * 矩阵数组[2][0] + endy * 矩阵数组[2][1] + endz * 矩阵数组[2][2] + 矩阵数组[2][3];
+    if(相机z > 0)
+    {
+        投掷世界坐标终止x = 窗口矩形.right / 2 +
+            (矩阵数组[0][0] * endx + 矩阵数组[0][1] * endy + 矩阵数组[0][2] * endz + 矩阵数组[0][3]) /
+            相机z * 窗口矩形.right / 2;
+
+        投掷世界坐标终止y = 窗口矩形.bottom / 2 -
+            (矩阵数组[1][0] * endx + 矩阵数组[1][1] * endy + 矩阵数组[1][2] * endz + 矩阵数组[1][3]) /
+            相机z * 窗口矩形.bottom / 2;
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y + 2), ImColor(0, 255, 0, 255), u8"CT-A门烟(跳投)");
+    }
+
+   
+   
+    float beginx1 = 1445.028, beginy1 = 1886.972, beginz1 = -6.499;
+    float endx1 = 1313.188, endy1 = 1547.341, endz1 = 278.687;
+    //std::cout << 矩阵数组[0][0] << std::endl;
+    相机z = beginx1 * 矩阵数组[2][0] + beginy1 * 矩阵数组[2][1] + beginz1 * 矩阵数组[2][2] + 矩阵数组[2][3];
+    if (相机z > 0)
+    {
+        投掷世界坐标起始x = 窗口矩形.right / 2 +
+            (矩阵数组[0][0] * beginx1 + 矩阵数组[0][1] * beginy1 + 矩阵数组[0][2] * beginz1 + 矩阵数组[0][3]) /
+            相机z * 窗口矩形.right / 2;
+
+        投掷世界坐标起始y = 窗口矩形.bottom / 2 -
+            (矩阵数组[1][0] * beginx1 + 矩阵数组[1][1] * beginy1 + 矩阵数组[1][2] * beginz1 + 矩阵数组[1][3]) /
+            相机z * 窗口矩形.bottom / 2;
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y + 2), ImColor(0, 255, 0, 255), u8"CT-A闪(跳投)");
+    }
+
+    相机z = endx1 * 矩阵数组[2][0] + endy1 * 矩阵数组[2][1] + endz1 * 矩阵数组[2][2] + 矩阵数组[2][3];
+    if (相机z > 0)
+    {
+        投掷世界坐标终止x = 窗口矩形.right / 2 +
+            (矩阵数组[0][0] * endx1 + 矩阵数组[0][1] * endy1 + 矩阵数组[0][2] * endz1 + 矩阵数组[0][3]) /
+            相机z * 窗口矩形.right / 2;
+
+        投掷世界坐标终止y = 窗口矩形.bottom / 2 -
+            (矩阵数组[1][0] * endx1 + 矩阵数组[1][1] * endy1 + 矩阵数组[1][2] * endz1 + 矩阵数组[1][3]) /
+            相机z * 窗口矩形.bottom / 2;
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y + 2), ImColor(0, 255, 0, 255), u8"CT-A闪(跳投)");
+    }
+    
+    float beginx2 = 1372.794, beginy2 = 1338.481, beginz2 = -6.403;
+    float endx2 = 862.101, endy2 = 764.099, endz2 = 224.595;
+    //std::cout << 矩阵数组[0][0] << std::endl;
+    相机z = beginx2 * 矩阵数组[2][0] + beginy2 * 矩阵数组[2][1] + beginz2 * 矩阵数组[2][2] + 矩阵数组[2][3];
+    if (相机z > 0)
+    {
+        投掷世界坐标起始x = 窗口矩形.right / 2 +
+            (矩阵数组[0][0] * beginx2 + 矩阵数组[0][1] * beginy2 + 矩阵数组[0][2] * beginz2 + 矩阵数组[0][3]) /
+            相机z * 窗口矩形.right / 2;
+
+        投掷世界坐标起始y = 窗口矩形.bottom / 2 -
+            (矩阵数组[1][0] * beginx2 + 矩阵数组[1][1] * beginy2 + 矩阵数组[1][2] * beginz2 + 矩阵数组[1][3]) /
+            相机z * 窗口矩形.bottom / 2;
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y + 2), ImColor(0, 255, 0, 255), u8"CT-A蓝箱火(助跑投)");
+    }
+
+    相机z = endx2 * 矩阵数组[2][0] + endy2 * 矩阵数组[2][1] + endz2 * 矩阵数组[2][2] + 矩阵数组[2][3];
+    if (相机z > 0)
+    {
+        投掷世界坐标终止x = 窗口矩形.right / 2 +
+            (矩阵数组[0][0] * endx2 + 矩阵数组[0][1] * endy2 + 矩阵数组[0][2] * endz2 + 矩阵数组[0][3]) /
+            相机z * 窗口矩形.right / 2;
+
+        投掷世界坐标终止y = 窗口矩形.bottom / 2 -
+            (矩阵数组[1][0] * endx2 + 矩阵数组[1][1] * endy2 + 矩阵数组[1][2] * endz2 + 矩阵数组[1][3]) /
+            相机z * 窗口矩形.bottom / 2;
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y + 2), ImColor(0, 255, 0, 255), u8"CT-A蓝箱火(助跑投)");
+    }
+
+
+    return 0;
 }
 
 
 
-//##############
-void 方框绘制()
-{
-    ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)模块地址 + 0x1A88218), &矩阵数组, 64, NULL);
-    ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)模块地址 + 0x1BAAE90), &缓冲区3, sizeof(DWORD64), NULL);
-    ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)缓冲区3 + 0x168), &缓冲区3, sizeof(DWORD64), NULL);
-    ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)缓冲区3 + 0xe68), &myteam, 4, NULL);
-    for (int i = 0; i <42; i++)
-    {
-        ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)模块地址 + 0x1877068), &缓冲区, sizeof(DWORD64), NULL);
-        ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)缓冲区 + i * 0x8), &缓冲区, sizeof(DWORD64), NULL);
-        ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)缓冲区 + 0xab4), &hp, 4, NULL);   //血
-        ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)缓冲区 + 0xE68), &team, 4, NULL); 
-        std::cout << team << "--" << hp << std::endl;
-        if (team != myteam && hp > 0&&team>0&&team<4)
-        {
-            绘制方框();
-        }
-       
-    }
-}
+
 // 主函数：绘制所有骨骼
 void 绘制骨骼() {
     // 读取矩阵和其他数据
-    ReadMemory(游戏进程句柄, (DWORD64)模块地址 + 0x1A88218, &矩阵数组, 64);
-    ReadMemory(游戏进程句柄, (DWORD64)模块地址 + 0x1BAAE90, &缓冲区3, sizeof(DWORD64));
-    ReadMemory(游戏进程句柄, (DWORD64)缓冲区3 + 0x168, &缓冲区3, sizeof(DWORD64));
+    ReadMemory(游戏进程句柄, (DWORD64)模块地址 + 0x1A68D28, &矩阵数组, 64);
+    //std::cout << 矩阵数组[0][0] << std::endl;
+    ReadMemory(游戏进程句柄, (DWORD64)模块地址 + 0x184C0D0, &缓冲区3, sizeof(DWORD64));
     ReadMemory(游戏进程句柄, (DWORD64)缓冲区3 + 0xe68, &myteam, 4);
-
+    //std::cout << myteam << std::endl;
     for (int i = 0; i < 42; i++) {
-        ReadMemory(游戏进程句柄, (DWORD64)模块地址 + 0x1877068, &缓冲区, sizeof(DWORD64));
+        ReadMemory(游戏进程句柄, (DWORD64)模块地址 + 0x1859B78, &缓冲区, sizeof(DWORD64));
         ReadMemory(游戏进程句柄, (DWORD64)缓冲区 + i * 0x8, &缓冲区, sizeof(DWORD64));
         ReadMemory(游戏进程句柄, (DWORD64)缓冲区 + 0xab4, &hp, 4);   // 血量
         ReadMemory(游戏进程句柄, (DWORD64)缓冲区 + 0xE68, &team, 4);
@@ -307,11 +312,11 @@ void 绘制骨骼() {
             骨骼绘制(26, 27, 缓冲区2, 矩阵数组, 窗口矩形);
             骨骼绘制(23, 24, 缓冲区2, 矩阵数组, 窗口矩形);
             骨骼绘制(5, 86, 缓冲区2, 矩阵数组, 窗口矩形);
-            骨骼绘制(14, 86,缓冲区2, 矩阵数组, 窗口矩形);
-            骨骼绘制(14, 67,缓冲区2, 矩阵数组, 窗口矩形);
-            骨骼绘制(5, 61,缓冲区2, 矩阵数组, 窗口矩形);
-            骨骼绘制(9, 61,缓冲区2, 矩阵数组, 窗口矩形);
-            骨骼绘制(9, 42,缓冲区2, 矩阵数组, 窗口矩形);
+            骨骼绘制(14, 86, 缓冲区2, 矩阵数组, 窗口矩形);
+            骨骼绘制(14, 67, 缓冲区2, 矩阵数组, 窗口矩形);
+            骨骼绘制(5, 61, 缓冲区2, 矩阵数组, 窗口矩形);
+            骨骼绘制(9, 61, 缓冲区2, 矩阵数组, 窗口矩形);
+            骨骼绘制(9, 42, 缓冲区2, 矩阵数组, 窗口矩形);
             // 添加更多骨骼点...
         }
     }
@@ -319,53 +324,34 @@ void 绘制骨骼() {
 
 
 
-int main()
+// Main code
+int main(int, char**)
 {
-    HWND 游戏窗口句柄 = FindWindowA(LPCSTR("SDL_app"), LPCSTR("Counter-Strike 2"));
+
+    HWND 游戏窗口句柄 = FindWindowA(LPCSTR("SDL_app"), LPCSTR("反恐精英：全球攻势"));
     std::cout << "窗口句柄：" << 游戏窗口句柄 << std::endl;
     bool isDrawing = false;
     pid = GetProcessiD(L"cs2.exe");
-    std::cout <<"pid:" << pid << std::endl;
-
-    游戏进程句柄 = OpenProcess(PROCESS_ALL_ACCESS,FALSE, pid);
+    std::cout << "pid:" << pid << std::endl;
+    游戏进程句柄 = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
     std::cout << "游戏进程句柄：" << 游戏进程句柄 << std::endl;
     模块地址 = GetProcessModuleHandle(pid, L"client.dll");
     std::cout << "模块地址：" << 模块地址 << std::endl;
-    
-    
-    //读内存
-
-    //DWORD DWPID = NULL;
-   // QWORD qProcessBase = NULL;
-  //  QWORD MessageBusModuleName;
-   // const char* tmp_str[] = { "", "-device", "FPGA" };
-  //  VMM_HANDLE handle = VMMDLL_Initialize(3, tmp_str);
-
-    // 读pid
-  //  VMMDLL_PidGetFromName(handle, (LPSTR)"PlantsVsZombies.exe", &DWPID);
-  //  std::cout << "pid is " << std::dec << DWPID << std::endl;
-
-
-
-
-
-
-
-
-
     int Width, Hight;
 
     Width = GetSystemMetrics(SM_CXSCREEN);//获取当前分辨率宽度
     Hight = GetSystemMetrics(SM_CYSCREEN);//获取当前分辨率高度
 
-    // HWND GameHwnd = FindWindowA("MainWindow",NULL);
 
-     // Create application window
-     //ImGui_ImplWin32_EnableDpiAwareness();
+
+
+
+
+    // Create application window
+    //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowEx(WS_EX_TOPMOST | WS_EX_LAYERED| WS_EX_TRANSPARENT, wc.lpszClassName, NULL, WS_POPUP, 0, 0, Width, Hight, nullptr, nullptr, wc.hInstance, nullptr);
-    // | WS_EX_LAYERED  | WS_EX_TRANSPARENT WS_EX_TOPMOST |WS_EX_LAYERED ,
+    HWND hwnd = ::CreateWindowEx(WS_EX_TOPMOST | WS_EX_LAYERED |WS_EX_TRANSPARENT, wc.lpszClassName, NULL, WS_POPUP, 0, 0, Width, Hight, nullptr, nullptr, wc.hInstance, nullptr);
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
     {
@@ -383,7 +369,6 @@ int main()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 18.0f, NULL, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -395,8 +380,7 @@ int main()
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-
-
+    
 
     // Our state
     bool show_demo_window = true;
@@ -404,11 +388,9 @@ int main()
     ImVec4 clear_color = ImVec4(ImColor(255, 255, 255)); //背景颜色
     SetLayeredWindowAttributes(hwnd, ImColor(255, 255, 255), 0, LWA_COLORKEY);
 
+
     // Main loop
     bool done = false;
-
-
-
     while (!done)
     {
         // Poll and handle messages (inputs, window resize, etc.)
@@ -444,8 +426,7 @@ int main()
         // Start the Dear ImGui frame
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame(); //开始帧
-
+        ImGui::NewFrame();
         //获取当前帧率
         float frameRate = ImGui::GetIO().Framerate;
         char frameRateStr[32];
@@ -453,62 +434,77 @@ int main()
         ImGui::GetForegroundDrawList()->AddText(ImVec2(10, 100), ImColor(0, 255, 0, 255), frameRateStr);
         ImGui::GetForegroundDrawList()->AddText(ImVec2(10, 120), ImColor(0, 255, 0, 255), u8"绘制开启");
 
-        // 绘制代码区
+       
+
         GetClientRect(游戏窗口句柄, &窗口矩形);
         坐标.x = 窗口矩形.left;
         坐标.y = 窗口矩形.top;
-       // std::cout << 窗口矩形.right << std::endl;
         ClientToScreen(游戏窗口句柄, &坐标);
-
         MoveWindow(hwnd, 坐标.x, 坐标.y, 窗口矩形.right, 窗口矩形.bottom, true);
-        static bool windows_open = true;
-        static bool test;
-        static int a = 0;
-        static float b = 0;
-        static float c = 0;
-        static char butter[1024];
 
+        bool draw_box ;
+        ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
+        ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_FirstUseEver);
+        ImGui::Begin("Menu", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+        ImGui::Checkbox("Draw ESP Box", &draw_box);
+        ImGui::End();
 
+        // 获取鼠标屏幕坐标
+        POINT cursorPos;
+        GetCursorPos(&cursorPos);
 
-        if (windows_open)
+        // 获取 ImGui 的 "Menu" 窗口对象
+        ImGuiWindow* menu_window = ImGui::FindWindowByName("Menu");
+        bool hovering_ui = false;
+
+        if (menu_window)
         {
-            //ImGui::Begin(u8"PVZ", &windows_open);
-            /*ImGui::Text(u8"imgui学习");
-            ImGui::SameLine();
-            ImGui::TextColored(ImColor(0,245,255,255), u8"imgui学习");
-            ImGui::SameLine();
-            ImGui::BulletText(u8"imgui学习");*/
+            // 获取窗口位置和大小（相对于你的透明窗口）
+            ImVec2 pos = menu_window->Pos;
+            ImVec2 size = menu_window->Size;
 
-            //if (ImGui::Button(u8"绘制方框"))·
-            //{
+            // 将 ImGui 的窗口矩形转换为屏幕坐标（因为 MoveWindow 后已对齐游戏窗口）
+            RECT menu_rect = {
+                (LONG)(pos.x + 坐标.x), // 屏幕左上角 X
+                (LONG)(pos.y + 坐标.y), // 屏幕左上角 Y
+                (LONG)(pos.x + size.x + 坐标.x), // 屏幕右下角 X
+                (LONG)(pos.y + size.y + 坐标.y)  // 屏幕右下角 Y
+            };
 
-           //}
-
-            /*ImGui::Checkbox(u8"绘制", &test);
-            if (test)
-            {
-                绘制();
-            }
-            */
-            //DWORD64 temp;
-            //ReadProcessMemory(游戏进程句柄, (LPCVOID)((DWORD64)(模块地址)+0x1875FB0 ), &temp, sizeof(DWORD64), NULL);
-            //ReadProcessMemory(游戏进程句柄, (LPCVOID)(temp + 0xdb8), &游戏坐标, 12, NULL);   //坐标
-            //std::cout << 游戏坐标.x << "----" << 游戏坐标.y << "----" << 游戏坐标.z << std::endl;
-       
-
-           绘制骨骼();
-
-
-            
-             
-       
-         //ImGui::End();
-            
+            // 判断鼠标是否在这个矩形内
+            hovering_ui = PtInRect(&menu_rect, cursorPos);
         }
 
+        // 设置 WS_EX_TRANSPARENT
+        LONG exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+        if (hovering_ui && (exStyle & WS_EX_TRANSPARENT)) {
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle & ~WS_EX_TRANSPARENT); // 允许点击
+        }
+        else if (!hovering_ui && !(exStyle & WS_EX_TRANSPARENT)) {
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);  // 穿透
+        }
+
+        
+        绘制骨骼();
+        if(draw_box)
+        {
+            绘制点位();
+        }
+       
+        //按键控制
+        if (GetAsyncKeyState(VK_F6) & 0x1) {  // 检查是否按下 F6（只触发一次）
+            show_my_window = !show_my_window;
+        }
+        if (show_my_window)
+        {
+            绘制点位();
+        }
+        
+        ImGui::Render();
+        
+        
         // Rendering
         ImGui::Render();
-
         const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
@@ -529,5 +525,93 @@ int main()
     ::DestroyWindow(hwnd);
     ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
+    return 0;
+}
 
+// Helper functions
+
+bool CreateDeviceD3D(HWND hWnd)
+{
+    // Setup swap chain
+    DXGI_SWAP_CHAIN_DESC sd;
+    ZeroMemory(&sd, sizeof(sd));
+    sd.BufferCount = 2;
+    sd.BufferDesc.Width = 0;
+    sd.BufferDesc.Height = 0;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    sd.BufferDesc.RefreshRate.Numerator = 60;
+    sd.BufferDesc.RefreshRate.Denominator = 1;
+    sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.OutputWindow = hWnd;
+    sd.SampleDesc.Count = 1;
+    sd.SampleDesc.Quality = 0;
+    sd.Windowed = TRUE;
+    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+    UINT createDeviceFlags = 0;
+    //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    D3D_FEATURE_LEVEL featureLevel;
+    const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
+    HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+    if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
+        res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
+    if (res != S_OK)
+        return false;
+
+    CreateRenderTarget();
+    return true;
+}
+
+void CleanupDeviceD3D()
+{
+    CleanupRenderTarget();
+    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = nullptr; }
+    if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = nullptr; }
+    if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
+}
+
+void CreateRenderTarget()
+{
+    ID3D11Texture2D* pBackBuffer;
+    g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &g_mainRenderTargetView);
+    pBackBuffer->Release();
+}
+
+void CleanupRenderTarget()
+{
+    if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = nullptr; }
+}
+
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+// Win32 message handler
+// You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
+// - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
+// - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
+// Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
+LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+        return true;
+
+    switch (msg)
+    {
+    case WM_SIZE:
+        if (wParam == SIZE_MINIMIZED)
+            return 0;
+        g_ResizeWidth = (UINT)LOWORD(lParam); // Queue resize
+        g_ResizeHeight = (UINT)HIWORD(lParam);
+        return 0;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+            return 0;
+        break;
+    case WM_DESTROY:
+        ::PostQuitMessage(0);
+        return 0;
+    }
+    return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
