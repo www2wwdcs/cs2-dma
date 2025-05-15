@@ -71,6 +71,25 @@ float d3d矩阵z, d3d矩阵x, d3d矩阵y, d3d矩阵y2, 缩放比例;
 int hp, team, myteam;
 bool show_my_window = false;
 
+struct v2d
+{
+    int z = 0;
+    int w = 0;
+    int x = 0;
+    int y = 0;
+
+    void update()
+    {
+        x = 1280 - z / 2;
+        y = 720 - w / 2;
+    }
+};
+
+
+
+
+
+v2d 画布;
 //函数1
 DWORD GetProcessiD(const wchar_t* processName) {
     //通过创建进程快照 遍历进程快照来获取进程ID
@@ -169,8 +188,8 @@ bool 骨骼绘制(int i, int j, DWORD64 缓冲区2, const float 矩阵数组[4][
 
     // 绘制线条
     ImGui::GetForegroundDrawList()->AddLine(
-        ImVec2(骨骼世界坐标起始x, 骨骼世界坐标起始y),
-        ImVec2(骨骼世界坐标结束x, 骨骼世界坐标结束y),
+        ImVec2(骨骼世界坐标起始x - 画布.x, 骨骼世界坐标起始y - 画布.y),
+        ImVec2(骨骼世界坐标结束x - 画布.x, 骨骼世界坐标结束y - 画布.y),
         ImColor(255, 0, 0, 255)
     );
 
@@ -194,8 +213,8 @@ int 绘制点位()
         投掷世界坐标起始y = 窗口矩形.bottom / 2 -
             (矩阵数组[1][0] * beginx + 矩阵数组[1][1] * beginy + 矩阵数组[1][2] * beginz + 矩阵数组[1][3]) /
             相机z * 窗口矩形.bottom / 2;
-        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y), 3.0f, ImColor(0, 0, 255, 255));
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y + 2), ImColor(0, 255, 0, 255), u8"CT-A门烟(跳投)");
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x - 画布.x, 投掷世界坐标起始y - 画布.y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x - 画布.x, 投掷世界坐标起始y - 画布.y + 2), ImColor(0, 255, 0, 255), "CT-A-Smoke(jump)");
     }
     相机z = endx * 矩阵数组[2][0] + endy * 矩阵数组[2][1] + endz * 矩阵数组[2][2] + 矩阵数组[2][3];
     if(相机z > 0)
@@ -207,8 +226,8 @@ int 绘制点位()
         投掷世界坐标终止y = 窗口矩形.bottom / 2 -
             (矩阵数组[1][0] * endx + 矩阵数组[1][1] * endy + 矩阵数组[1][2] * endz + 矩阵数组[1][3]) /
             相机z * 窗口矩形.bottom / 2;
-        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y), 3.0f, ImColor(0, 0, 255, 255));
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y + 2), ImColor(0, 255, 0, 255), u8"CT-A门烟(跳投)");
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x - 画布.x, 投掷世界坐标终止y - 画布.y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x - 画布.x, 投掷世界坐标终止y - 画布.y + 2), ImColor(0, 255, 0, 255), "CT-A-Smoke(jump)");
     }
 
    
@@ -226,8 +245,8 @@ int 绘制点位()
         投掷世界坐标起始y = 窗口矩形.bottom / 2 -
             (矩阵数组[1][0] * beginx1 + 矩阵数组[1][1] * beginy1 + 矩阵数组[1][2] * beginz1 + 矩阵数组[1][3]) /
             相机z * 窗口矩形.bottom / 2;
-        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y), 3.0f, ImColor(0, 0, 255, 255));
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y + 2), ImColor(0, 255, 0, 255), u8"CT-A闪(跳投)");
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x - 画布.x, 投掷世界坐标起始y - 画布.y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x - 画布.x, 投掷世界坐标起始y - 画布.y + 2), ImColor(0, 255, 0, 255), "CT-A-Flash(jump)");
     }
 
     相机z = endx1 * 矩阵数组[2][0] + endy1 * 矩阵数组[2][1] + endz1 * 矩阵数组[2][2] + 矩阵数组[2][3];
@@ -240,8 +259,8 @@ int 绘制点位()
         投掷世界坐标终止y = 窗口矩形.bottom / 2 -
             (矩阵数组[1][0] * endx1 + 矩阵数组[1][1] * endy1 + 矩阵数组[1][2] * endz1 + 矩阵数组[1][3]) /
             相机z * 窗口矩形.bottom / 2;
-        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y), 3.0f, ImColor(0, 0, 255, 255));
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y + 2), ImColor(0, 255, 0, 255), u8"CT-A闪(跳投)");
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x - 画布.x, 投掷世界坐标终止y - 画布.y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x - 画布.x, 投掷世界坐标终止y - 画布.y + 2), ImColor(0, 255, 0, 255), "CT-A-Flash(jump)");
     }
     
     float beginx2 = 1372.794, beginy2 = 1338.481, beginz2 = -6.403;
@@ -257,8 +276,8 @@ int 绘制点位()
         投掷世界坐标起始y = 窗口矩形.bottom / 2 -
             (矩阵数组[1][0] * beginx2 + 矩阵数组[1][1] * beginy2 + 矩阵数组[1][2] * beginz2 + 矩阵数组[1][3]) /
             相机z * 窗口矩形.bottom / 2;
-        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y), 3.0f, ImColor(0, 0, 255, 255));
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x, 投掷世界坐标起始y + 2), ImColor(0, 255, 0, 255), u8"CT-A蓝箱火(助跑投)");
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标起始x - 画布.x, 投掷世界坐标起始y - 画布.y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标起始x - 画布.x, 投掷世界坐标起始y - 画布.y + 2), ImColor(0, 255, 0, 255), "CT-A-bulefire(Run)");
     }
 
     相机z = endx2 * 矩阵数组[2][0] + endy2 * 矩阵数组[2][1] + endz2 * 矩阵数组[2][2] + 矩阵数组[2][3];
@@ -271,8 +290,8 @@ int 绘制点位()
         投掷世界坐标终止y = 窗口矩形.bottom / 2 -
             (矩阵数组[1][0] * endx2 + 矩阵数组[1][1] * endy2 + 矩阵数组[1][2] * endz2 + 矩阵数组[1][3]) /
             相机z * 窗口矩形.bottom / 2;
-        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y), 3.0f, ImColor(0, 0, 255, 255));
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x, 投掷世界坐标终止y + 2), ImColor(0, 255, 0, 255), u8"CT-A蓝箱火(助跑投)");
+        ImGui::GetForegroundDrawList()->AddCircleFilled(ImVec2(投掷世界坐标终止x - 画布.x, 投掷世界坐标终止y - 画布.y), 3.0f, ImColor(0, 0, 255, 255));
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(投掷世界坐标终止x - 画布.x, 投掷世界坐标终止y - 画布.y + 2), ImColor(0, 255, 0, 255), "CT-A-bulefire(Run)");
     }
 
 
@@ -328,7 +347,7 @@ void 绘制骨骼() {
 int main(int, char**)
 {
 
-    HWND 游戏窗口句柄 = FindWindowA(LPCSTR("SDL_app"), LPCSTR("反恐精英：全球攻势"));
+    HWND 游戏窗口句柄 = FindWindowA(LPCSTR("SDL_app"), LPCSTR("Counter-Strike 2"));
     std::cout << "窗口句柄：" << 游戏窗口句柄 << std::endl;
     bool isDrawing = false;
     pid = GetProcessiD(L"cs2.exe");
@@ -341,9 +360,10 @@ int main(int, char**)
 
     Width = GetSystemMetrics(SM_CXSCREEN);//获取当前分辨率宽度
     Hight = GetSystemMetrics(SM_CYSCREEN);//获取当前分辨率高度
-
-
-
+    
+    画布.z = 1280;
+    画布.w = 720;
+    画布.update(); // 自动计算 x 和 y
 
 
 
@@ -432,7 +452,7 @@ int main(int, char**)
         char frameRateStr[32];
         std::snprintf(frameRateStr, sizeof(frameRateStr), "FPS: %d", static_cast<int>(frameRate));
         ImGui::GetForegroundDrawList()->AddText(ImVec2(10, 100), ImColor(0, 255, 0, 255), frameRateStr);
-        ImGui::GetForegroundDrawList()->AddText(ImVec2(10, 120), ImColor(0, 255, 0, 255), u8"绘制开启");
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(10, 120), ImColor(0, 255, 0, 255), "Begin draw");
 
        
 
@@ -440,12 +460,11 @@ int main(int, char**)
         坐标.x = 窗口矩形.left;
         坐标.y = 窗口矩形.top;
         ClientToScreen(游戏窗口句柄, &坐标);
-        MoveWindow(hwnd, 坐标.x, 坐标.y, 窗口矩形.right, 窗口矩形.bottom, true);
-
+        MoveWindow(hwnd, 画布.x, 画布.y, 画布.z, 画布.w, true);
+       
         bool draw_box ;
-        ImGui::SetNextWindowPos(ImVec2(50, 50), ImGuiCond_FirstUseEver);
-        ImGui::SetNextWindowSize(ImVec2(500, 500), ImGuiCond_FirstUseEver);
-        ImGui::Begin("Menu", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+    
+        ImGui::Begin("Menu", nullptr);
         ImGui::Checkbox("Draw ESP Box", &draw_box);
         ImGui::End();
 
@@ -465,10 +484,10 @@ int main(int, char**)
 
             // 将 ImGui 的窗口矩形转换为屏幕坐标（因为 MoveWindow 后已对齐游戏窗口）
             RECT menu_rect = {
-                (LONG)(pos.x + 坐标.x), // 屏幕左上角 X
-                (LONG)(pos.y + 坐标.y), // 屏幕左上角 Y
-                (LONG)(pos.x + size.x + 坐标.x), // 屏幕右下角 X
-                (LONG)(pos.y + size.y + 坐标.y)  // 屏幕右下角 Y
+                (LONG)(pos.x + 画布.x), // 屏幕左上角 X
+                (LONG)(pos.y + 画布.y), // 屏幕左上角 Y
+                (LONG)(pos.x + size.x + 画布.x), // 屏幕右下角 X
+                (LONG)(pos.y + size.y + 画布.y)  // 屏幕右下角 Y
             };
 
             // 判断鼠标是否在这个矩形内
@@ -483,7 +502,7 @@ int main(int, char**)
         else if (!hovering_ui && !(exStyle & WS_EX_TRANSPARENT)) {
             SetWindowLong(hwnd, GWL_EXSTYLE, exStyle | WS_EX_TRANSPARENT);  // 穿透
         }
-
+        
         
         绘制骨骼();
         if(draw_box)
@@ -493,9 +512,9 @@ int main(int, char**)
        
         //按键控制
         if (GetAsyncKeyState(VK_F6) & 0x1) {  // 检查是否按下 F6（只触发一次）
-            show_my_window = !show_my_window;
+            draw_box = !draw_box;
         }
-        if (show_my_window)
+        if (draw_box)
         {
             绘制点位();
         }
@@ -503,8 +522,7 @@ int main(int, char**)
         ImGui::Render();
         
         
-        // Rendering
-        ImGui::Render();
+       
         const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
         g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
         g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
@@ -615,3 +633,4 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
+
